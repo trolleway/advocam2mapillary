@@ -26,7 +26,7 @@ for filepath in files:
         
     cropped_filepath = os.path.join(os.path.dirname(filepath),CROPPED_FOLDER,os.path.basename(filepath))
         
-    cmd = '''ffmpeg -i "'''+os.path.normpath(filepath)+'''" -vf fps=fps=30 -vf crop=iw:ih-140:0:0 -c:a copy "'''+os.path.normpath(cropped_filepath)+'''"'''
+    cmd = '''ffmpeg -i "'''+os.path.normpath(filepath)+'''" -r 4 -vf crop=iw:ih-140:0:0 -c:a copy "'''+os.path.normpath(cropped_filepath)+'''"'''
     print cmd
     os.system(cmd)
     
