@@ -6,10 +6,26 @@ import datetime
 import time
 import os
 
+import argparse
+
+def get_args():
+    import argparse
+    p = argparse.ArgumentParser(description='Geotag one or more photos with location and orientation from GPX file.')
+    p.add_argument('--testmode', help='Test commands, not perform actions')
+    #p.add_argument('gpx_file', help='Location of GPX file to get locations from.')
+    #p.add_argument('time_offset',
+    #    help='Time offset between GPX and photos. If your camera is ahead by one minute, time_offset is 60.',
+    #    default=0, type=float, nargs='?') # nargs='?' is how you make the last positional argument optional.
+    return p.parse_args()
+    
+    
+args = get_args()
+testmode = args.testmode
+
 mapillary_tools = 'c:\gis\pano_heading\mapillary_tools.exe'
 CROPPED_FOLDER = 'cropped'
 
-path = 'g:/VIDEO/2019_04_reg/stage1/'
+path = 'c:/mav/cardv/'
 files = []
 for dirpath, dnames, fnames in os.walk(path):
     for f in fnames:
@@ -26,8 +42,10 @@ for filepath in files:
         
     cropped_filepath = os.path.join(os.path.dirname(filepath),CROPPED_FOLDER,os.path.basename(filepath))
         
-    cmd = '''ffmpeg -i "'''+os.path.normpath(filepath)+'''" -r 4 -vf crop=iw:ih-140:0:0 -c:a copy "'''+os.path.normpath(cropped_filepath)+'''"'''
+    cmd = '''ffmpeg -i "'''+os.path.normpath(filepath)+'''"  -loglevel panic -r 4 -vf crop=iw:ih-140:0:0 -c:a copy "'''+os.path.normpath(cropped_filepath)+'''"'''
     print cmd
+    if testmode is None:
+        pass
     os.system(cmd)
     
     
@@ -66,13 +84,22 @@ for filepath in files:
     cmd = '''{mapillary_tools} sample_video --video_import_path "'''+os.path.normpath(filepath)+'''" --video_sample_interval 0.5 --video_start_time {unix_timestamp_timezone} --advanced'''
     cmd = cmd.format(mapillary_tools=mapillary_tools,unix_timestamp_timezone=unix_timestamp_timezone)
     print cmd
-    os.system(cmd)
+    if testmode is None:
+        os.system(cmd)
 
     sampled_video_frames_path = os.path.join(os.path.dirname(filepath),'mapillary_sampled_video_frames')
 
-    cmd = ''' {mapillary_tools} process --advanced --import_path "'''+os.path.normpath(sampled_video_frames_path)+'''" --user_name "trolleway" --geotag_source "gpx" --geotag_source_path "g:\\VIDEO\\2019_04_reg\\20190427_repair.gpx" --overwrite_all_EXIF_tags '''
+    cmd = ''' {mapillary_tools} process --advanced --import_path "'''+os.path.normpath(os.path.join(sampled_video_frames_path, os.path.splitext(filename)[0]))+'''" --user_name "trolleway" --geotag_source "gpx" --geotag_source_path "c:\\mav\\cardv\\20190608-101937.gpx" --overwrite_all_EXIF_tags '''
     cmd = cmd.format(mapillary_tools=mapillary_tools)
-    os.system(cmd)
+    print cmd
+    if testmode is None:
+        os.system(cmd)
+    
+    cmd = ''' {mapillary_tools} upload --import_path "'''+os.path.normpath(os.path.join(sampled_video_frames_path, os.path.splitext(filename)[0]))+'''" --skip_subfolders --number_threads 5 --max_attempts 10 --advanced'''
+    cmd = cmd.format(mapillary_tools=mapillary_tools)
+    print cmd
+    if testmode is None:
+        os.system(cmd)   
 
     #print datetime_object
     #print totimestamp(datetime_object)
