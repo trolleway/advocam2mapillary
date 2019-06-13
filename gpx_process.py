@@ -25,9 +25,9 @@ testmode = args.testmode
 mapillary_tools = 'c:\gis\pano_heading\mapillary_tools.exe'
 CROPPED_FOLDER = 'cropped'
 
-path = 'c:/mav/cardv/'
+pathsrc = 'c:/mav/cardv/'
 files = []
-for dirpath, dnames, fnames in os.walk(path):
+for dirpath, dnames, fnames in os.walk(pathsrc):
     for f in fnames:
         if f.upper().endswith(".MP4"):
              files.append(os.path.join(dirpath, f))
@@ -42,36 +42,18 @@ for filepath in files:
         
     cropped_filepath = os.path.join(os.path.dirname(filepath),CROPPED_FOLDER,os.path.basename(filepath))
         
-    cmd = '''ffmpeg -i "'''+os.path.normpath(filepath)+'''"  -loglevel panic -r 4 -vf crop=iw:ih-140:0:0 -c:a copy "'''+os.path.normpath(cropped_filepath)+'''"'''
+    cmd = '''ffmpeg -i "'''+os.path.normpath(filepath)+'''"  -loglevel panic -r 8 -vf crop=iw:ih-140:0:0 -c:a copy "'''+os.path.normpath(cropped_filepath)+'''"'''
     print cmd
     if testmode is None:
         pass
-    os.system(cmd)
+    os.system(cmd)    
     
-    
-    
-path = os.path.join(path,CROPPED_FOLDER)
-files = []
-for dirpath, dnames, fnames in os.walk(path):
-    for f in fnames:
-        if f.upper().endswith(".MP4"):
-             files.append(os.path.join(dirpath, f))
-
-for filepath in files:
-
-                    
-                    
-
+    path = os.path.join(pathsrc,CROPPED_FOLDER)
+               
+    filepath = cropped_filepath
     filename = os.path.basename(filepath)
     filedate_from_name = filename[6:14]
     filetime_from_name = filename[15:21]  
-
-
-    #print   filedate_from_name, filetime_from_name
-    #datetime_object = datetime.strptime(filedate_from_name+'_'+filetime_from_name, '%Y%m%d_%H%M%S')
-    #now = datetime.utcnow()
-    #print time.mktime(datetime_object)
-
 
 
     timestamp = time.mktime(datetime.datetime.strptime(filedate_from_name+'_'+filetime_from_name, "%Y%m%d_%H%M%S").timetuple())
@@ -81,7 +63,7 @@ for filepath in files:
     print unix_timestamp_timezone
 
 
-    cmd = '''{mapillary_tools} sample_video --video_import_path "'''+os.path.normpath(filepath)+'''" --video_sample_interval 0.5 --video_start_time {unix_timestamp_timezone} --advanced'''
+    cmd = '''{mapillary_tools} sample_video --video_import_path "'''+os.path.normpath(filepath)+'''" --video_sample_interval 0.25 --video_start_time {unix_timestamp_timezone} --advanced'''
     cmd = cmd.format(mapillary_tools=mapillary_tools,unix_timestamp_timezone=unix_timestamp_timezone)
     print cmd
     if testmode is None:
@@ -100,6 +82,9 @@ for filepath in files:
     print cmd
     if testmode is None:
         os.system(cmd)   
+        
+        
+    print 
 
     #print datetime_object
     #print totimestamp(datetime_object)
