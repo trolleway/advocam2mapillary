@@ -10,7 +10,7 @@ import argparse
 
 def get_args():
     import argparse
-    p = argparse.ArgumentParser(description='Geotag one or more photos with location and orientation from GPX file.')
+    p = argparse.ArgumentParser(description='Process folder with videofiles from Advocam dashcam and gpx file, upload frames to Mapillary. Datetime of videofiles determined from filenames')
     p.add_argument('--testmode', help='Test commands, not perform actions')
     #p.add_argument('gpx_file', help='Location of GPX file to get locations from.')
     #p.add_argument('time_offset',
@@ -42,6 +42,7 @@ for filepath in files:
         
     cropped_filepath = os.path.join(os.path.dirname(filepath),CROPPED_FOLDER,os.path.basename(filepath))
         
+    #convert video: crop license plate, redude fps to 8 for faster processing in mapillary_tools
     cmd = '''ffmpeg -i "'''+os.path.normpath(filepath)+'''"  -loglevel panic -r 8 -vf crop=iw:ih-140:0:0 -c:a copy "'''+os.path.normpath(cropped_filepath)+'''"'''
     print cmd
     if testmode is None:
@@ -55,14 +56,14 @@ for filepath in files:
     filedate_from_name = filename[6:14]
     filetime_from_name = filename[15:21]  
 
-
+    #get video begin datetime from video filename
     timestamp = time.mktime(datetime.datetime.strptime(filedate_from_name+'_'+filetime_from_name, "%Y%m%d_%H%M%S").timetuple())
 
     unix_timestamp_ms = int(timestamp)*1000
     unix_timestamp_timezone = unix_timestamp_ms+(0*60*60*1000)
     print unix_timestamp_timezone
 
-
+    # sample video
     cmd = '''{mapillary_tools} sample_video --video_import_path "'''+os.path.normpath(filepath)+'''" --video_sample_interval 0.25 --video_start_time {unix_timestamp_timezone} --advanced'''
     cmd = cmd.format(mapillary_tools=mapillary_tools,unix_timestamp_timezone=unix_timestamp_timezone)
     print cmd
@@ -70,13 +71,15 @@ for filepath in files:
         os.system(cmd)
 
     sampled_video_frames_path = os.path.join(os.path.dirname(filepath),'mapillary_sampled_video_frames')
-
+    
+    # geotag frames using hardcoded gpx
     cmd = ''' {mapillary_tools} process --advanced --import_path "'''+os.path.normpath(os.path.join(sampled_video_frames_path, os.path.splitext(filename)[0]))+'''" --user_name "trolleway" --geotag_source "gpx" --geotag_source_path "c:\\mav\\cardv\\20190608-101937.gpx" --overwrite_all_EXIF_tags '''
     cmd = cmd.format(mapillary_tools=mapillary_tools)
     print cmd
     if testmode is None:
         os.system(cmd)
     
+    # upload to mapillary
     cmd = ''' {mapillary_tools} upload --import_path "'''+os.path.normpath(os.path.join(sampled_video_frames_path, os.path.splitext(filename)[0]))+'''" --skip_subfolders --number_threads 5 --max_attempts 10 --advanced'''
     cmd = cmd.format(mapillary_tools=mapillary_tools)
     print cmd
